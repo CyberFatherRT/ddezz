@@ -8,13 +8,17 @@ function log() {
 
 function get_ip() {
     local current_ip=$(curl -s ifconfig.me/ip)
+    local excluded_ips=(${EXCLUDED_IPS//,/ })
 
-    for ip in "(${EXCLUDED_IPS})[@]"; do
-        if [[ $current_ip == $ip ]]; then
-            exit 0
+    for ip in ${excluded_ips[@]}; do
+        if [[ "${current_ip}" == "${ip}" ]]; then
+            log "Your ip \"$current_ip\" in excluded list"
+            return 1
         fi
     done
+
     echo $current_ip
+    return 0
 }
 
 function get_zone_id() {
@@ -83,6 +87,8 @@ function set_A_record() {
 }
 
 IP=$(get_ip)
+if [[ $? -eq 1 ]]; then exit; fi
+
 zone_id=$(get_zone_id $ZONE)
 dns_record_ids=($(get_dns_ids $zone_id))
 
